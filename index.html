@@ -12,6 +12,45 @@
         body { font-family: 'Inter', sans-serif; }
         .screen { display: none; }
         .screen.active { display: block; }
+        
+        /* Mobile-first table styles */
+        @media (max-width: 768px) {
+            .responsive-table thead {
+                display: none;
+            }
+            .responsive-table tr {
+                display: block;
+                margin-bottom: 1.5rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .responsive-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0.25rem;
+                text-align: right;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .responsive-table td:last-child {
+                border-bottom: none;
+            }
+            .responsive-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                text-align: left;
+                padding-right: 1rem;
+                color: #374151;
+            }
+            .responsive-table .input-narrow, 
+            .responsive-table input[type="text"] {
+                width: 60%;
+                text-align: right;
+            }
+        }
+
         .table-cell {
             padding: 12px 10px;
             border-bottom: 1px solid #e5e7eb;
@@ -42,26 +81,26 @@
         #amplification-words { font-family: monospace; font-size: 0.875rem; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen py-8">
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen py-4 sm:py-8">
 
-    <div class="w-full max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
+    <div class="w-full max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
 
         <!-- ===== Початковий екран ===== -->
         <div id="setup-screen" class="screen active">
             <header class="text-center mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">Асоціативний аналіз</h1>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Асоціативний аналіз</h1>
                 <p class="text-gray-600 mt-2">Інструмент на основі методу Карла Юнга</p>
             </header>
              <div class="mt-6">
                 <label for="analysis-topic" class="block text-sm font-medium text-gray-700 mb-2">Тема аналізу:</label>
-                <input type="text" id="analysis-topic" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Сон про старий будинок, Ситуація на роботі, Відчуття тривоги...">
+                <input type="text" id="analysis-topic" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Сон про старий будинок, Ситуація на роботі...">
             </div>
              <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">1. Опишіть вашу тему (сон, ситуацію, відчуття):</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">1. Опишіть вашу тему:</label>
                 <div class="border border-gray-300 rounded-lg">
                     <div class="p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                          <button id="bold-btn" class="font-bold text-lg px-3 py-1 rounded hover:bg-gray-200" title="Виділити слово (Ctrl+B)">B</button>
-                         <span class="text-xs text-gray-500 ml-2">Виділіть текст та натисніть 'B', щоб додати до стимулів.</span>
+                         <span class="text-xs text-gray-500 ml-2">Виділіть текст та натисніть 'B'.</span>
                     </div>
                     <div id="dream-description-editor" contenteditable="true" class="w-full p-3 outline-none"></div>
                 </div>
@@ -76,33 +115,33 @@
         </div>
         
         <!-- ===== Екрани-посередники ===== -->
-        <div id="retest-instruction-screen" class="screen text-center p-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">Основний етап завершено</h1>
+        <div id="retest-instruction-screen" class="screen text-center p-4 sm:p-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Основний етап завершено</h1>
             <p class="text-gray-600 mb-6 max-w-lg mx-auto">Зараз ви знову побачите ті самі слова (без калібрувальних). Ваше завдання — спробувати відтворити якомога точніше ту саму асоціацію, яку ви дали першого разу.</p>
-            <button id="start-retest-btn" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700">Почати повторний тест</button>
+            <button id="start-retest-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700">Почати повторний тест</button>
         </div>
 
-        <div id="test-screen" class="screen text-center p-8">
+        <div id="test-screen" class="screen text-center p-4 sm:p-8">
             <p id="test-phase-title" class="text-lg font-semibold text-indigo-600 mb-4"></p>
             <p class="text-gray-500 mb-4">Слово-стимул:</p>
-            <h2 id="stimulus-word" class="text-5xl font-bold mb-8 h-20 flex items-center justify-center"></h2>
+            <h2 id="stimulus-word" class="text-4xl md:text-5xl font-bold mb-8 h-20 flex items-center justify-center break-words px-2"></h2>
             <div class="relative max-w-md mx-auto">
                 <input type="text" id="association-input" class="w-full text-center p-4 border-2 border-gray-300 rounded-lg text-xl" placeholder="Ваша асоціація..." autocomplete="off">
-                <p class="absolute -bottom-6 right-0 text-sm text-gray-400">Натисніть Enter для підтвердження</p>
+                <p class="absolute -bottom-6 right-0 text-sm text-gray-400">Натисніть Enter</p>
             </div>
              <div id="progress-indicator" class="mt-12 text-gray-500"></div>
         </div>
 
         <!-- ===== Екран результатів ===== -->
         <div id="results-screen" class="screen">
-            <h1 id="final-title" class="text-3xl font-bold text-center mb-4">Результати аналізу</h1>
+            <h1 id="final-title" class="text-2xl sm:text-3xl font-bold text-center mb-4">Результати аналізу</h1>
             <div class="bg-gray-50 p-4 rounded-lg border mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">Опис теми:</h3>
                 <div id="final-dream-description" class="text-gray-600 whitespace-pre-wrap"></div>
             </div>
 
             <div class="overflow-x-auto mb-8">
-                <table class="w-full text-left border-collapse text-sm">
+                <table class="w-full text-left border-collapse text-sm responsive-table">
                     <thead>
                         <tr>
                             <th class="table-cell font-semibold bg-gray-50">Стимул</th>
@@ -122,8 +161,8 @@
             </div>
 
             <div class="mb-8">
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-sm font-medium text-gray-700">Ключові слова та асоціації для подальшої роботи:</label>
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-2 gap-2">
+                    <label class="block text-sm font-medium text-gray-700">Ключові слова для роботи:</label>
                     <div class="flex items-center">
                         <input id="include-details-checkbox" type="checkbox" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         <label for="include-details-checkbox" class="ml-2 block text-sm text-gray-900">Додавати деталі</label>
@@ -136,22 +175,22 @@
             </div>
 
             <div id="interpretation-guide" class="bg-gray-50 p-6 rounded-lg border">
-                 <h3 class="text-xl font-bold mb-4">Як інтерпретувати результати? Поглиблений посібник</h3>
-                 <p class="mb-4 text-gray-600">Цей тест — не іспит, а дзеркало. Він не дає "правильних" чи "неправильних" відповідей, а лише підсвічує ті ділянки вашої психіки, що наповнені енергією. Ці "гарячі точки" Юнг називав <strong class="text-gray-800">комплексами</strong> — емоційно зарядженими скупченнями думок, почуттів і спогадів.</p>
+                 <h3 class="text-xl font-bold mb-4">Як інтерпретувати результати?</h3>
+                 <p class="mb-4 text-gray-600">Цей тест — не іспит, а дзеркало. Він підсвічує емоційно заряджені теми (<strong class="text-gray-800">комплекси</strong>) у вашій психіці.</p>
                  <h4 class="text-lg font-semibold mt-6 mb-3">Крок 1: Знайдіть індикатори комплексів</h4>
-                 <p class="mb-3 text-gray-600">Ваша головна задача — знайти в таблиці аномалії. Програма автоматично позначає (*) такі місця, спираючись на персоналізовану для вас логіку.</p>
+                 <p class="mb-3 text-gray-600">Програма автоматично позначає (*) аномалії, спираючись на персоналізовану для вас логіку.</p>
                   <ul class="space-y-3 list-disc list-inside">
-                     <li><strong class="text-gray-800">Розбіжність асоціацій:</strong> Найважливіший маркер. Якщо ви не змогли згадати першу асоціацію, це означає, що тема має сильний несвідомий заряд.</li>
-                     <li><strong class="text-gray-800">Довгий час реакції:</strong> Програма обчислює вашу середню швидкість відповіді на нейтральні слова. Якщо реакція на якесь слово значно довша за вашу норму, це вказує на внутрішню боротьбу.</li>
-                     <li><strong class="text-gray-800">Сильні емоції та тілесні реакції:</strong> Раптовий смуток, тривога, напруга в тілі — це прямі сигнали, що ви торкнулися чогось значущого.</li>
+                     <li><strong class="text-gray-800">Розбіжність асоціацій:</strong> Найважливіший маркер. Вказує на сильний несвідомий заряд теми.</li>
+                     <li><strong class="text-gray-800">Довгий час реакції:</strong> Програма обчислює вашу середню швидкість. Значно довша реакція вказує на внутрішню боротьбу.</li>
+                     <li><strong class="text-gray-800">Сильні емоції та тілесні реакції:</strong> Прямі сигнали, що ви торкнулися чогось значущого.</li>
                   </ul>
                  <h4 class="text-lg font-semibold mt-6 mb-3">Крок 2: Працюйте з виявленими комплексами</h4>
                   <ul class="space-y-3 list-disc list-inside text-gray-700">
-                     <li><strong>Ампліфікація:</strong> Розширте образ. Де ще ви зустрічали його (міфи, казки, мистецтво)? Яке його культурне значення?</li>
-                     <li><strong>Активна уява:</strong> Уявіть символ і почніть з ним уявний діалог. Запитайте: "Чому ти тут? Що ти хочеш сказати?"</li>
-                     <li><strong>Зв'язок з реальним життям:</strong> Як виявлені теми пов'язані з вашими поточними обставинами?</li>
+                     <li><strong>Ампліфікація:</strong> Розширте образ (міфи, казки, мистецтво).</li>
+                     <li><strong>Активна уява:</strong> Уявіть символ і почніть з ним діалог.</li>
+                     <li><strong>Зв'язок з реальним життям:</strong> Як тема пов'язана з вашими поточними обставинами?</li>
                  </ul>
-                 <p class="mt-6 text-sm text-gray-500 border-t pt-4"><strong>Важливе застереження:</strong> Цей інструмент призначений для самодослідження. Якщо виявлені теми викликають сильний дискомфорт, будь ласка, зверніться до кваліфікованого психотерапевта.</p>
+                 <p class="mt-6 text-sm text-gray-500 border-t pt-4"><strong>Застереження:</strong> Цей інструмент призначений для самодослідження. Якщо теми викликають сильний дискомфорт, зверніться до психотерапевта.</p>
             </div>
             
             <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -221,7 +260,7 @@
                 currentWordIndex = 0;
                 const isRetest = testPhase === 'retest';
                 display.testPhaseTitle.textContent = isRetest ? 'Етап 2: Повторна асоціація' : 'Етап 1: Калібрування та перший прохід';
-                if(isRetest) { // Skip calibration words on retest
+                if(isRetest) {
                     currentWordIndex = CALIBRATION_COUNT;
                 }
                 showScreen('test');
@@ -302,6 +341,7 @@
                 const calibrationTimes = results.filter(r => r.isCalibration).map(r => r.reactionTime1);
                 baseReactionTime = calibrationTimes.reduce((a, b) => a + b, 0) / calibrationTimes.length || 2;
                 const longTimeThreshold = baseReactionTime * 1.75;
+                const tableHeaders = ['Стимул', 'Асоціація 1', 'Час', 'Асоціація 2', 'Час', 'Розбіжність', '*', 'Емоції', 'Відчуття', 'Коментар'];
 
                 results.forEach((result, index) => {
                     if (result.isCalibration) return;
@@ -315,19 +355,22 @@
 
                     const mismatchText = mismatch ? 'Так' : 'Ні';
                     const row = document.createElement('tr');
+                    
+                    const cells = [
+                        `<td data-label="${tableHeaders[0]}" class="table-cell font-semibold">${result.stimulus}</td>`,
+                        `<td data-label="${tableHeaders[1]}" class="table-cell">${result.association1}</td>`,
+                        `<td data-label="${tableHeaders[2]}" class="table-cell text-center font-mono ${longTime && result.reactionTime1 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime1.toFixed(2)}</td>`,
+                        `<td data-label="${tableHeaders[3]}" class="table-cell">${result.association2}</td>`,
+                        `<td data-label="${tableHeaders[4]}" class="table-cell text-center font-mono ${longTime && result.reactionTime2 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime2.toFixed(2)}</td>`,
+                        `<td data-label="${tableHeaders[5]}" class="table-cell text-center font-semibold ${mismatch ? 'text-red-600' : 'text-green-600'}">${mismatchText}</td>`,
+                        `<td data-label="${tableHeaders[6]}" class="table-cell text-center"><input type="checkbox" data-index="${index}" data-field="userFlagged" class="result-input h-5 w-5 text-indigo-600" ${result.userFlagged ? 'checked' : ''}></td>`,
+                        `<td data-label="${tableHeaders[7]}" class="table-cell"><input type="text" data-index="${index}" data-field="emotion" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.emotion}"></td>`,
+                        `<td data-label="${tableHeaders[8]}" class="table-cell"><input type="text" data-index="${index}" data-field="feeling" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.feeling}"></td>`,
+                        `<td data-label="${tableHeaders[9]}" class="table-cell"><input type="text" data-index="${index}" data-field="comment" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.comment}"></td>`
+                    ];
+
+                    row.innerHTML = cells.join('');
                     row.className = `hover:bg-gray-50 ${mismatch ? 'mismatch-row' : ''}`;
-                    row.innerHTML = `
-                        <td class="table-cell font-semibold">${result.stimulus}</td>
-                        <td class="table-cell">${result.association1}</td>
-                        <td class="table-cell text-center font-mono ${longTime && result.reactionTime1 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime1.toFixed(2)}</td>
-                        <td class="table-cell">${result.association2}</td>
-                        <td class="table-cell text-center font-mono ${longTime && result.reactionTime2 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime2.toFixed(2)}</td>
-                        <td class="table-cell text-center font-semibold ${mismatch ? 'text-red-600' : 'text-green-600'}">${mismatchText}</td>
-                        <td class="table-cell text-center"><input type="checkbox" data-index="${index}" data-field="userFlagged" class="result-input h-5 w-5 text-indigo-600" ${result.userFlagged ? 'checked' : ''}></td>
-                        <td class="table-cell"><input type="text" data-index="${index}" data-field="emotion" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.emotion}"></td>
-                        <td class="table-cell"><input type="text" data-index="${index}" data-field="feeling" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.feeling}"></td>
-                        <td class="table-cell"><input type="text" data-index="${index}" data-field="comment" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.comment}"></td>
-                    `;
                     display.resultsTableBody.appendChild(row);
                 });
 
