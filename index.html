@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Асоціативний аналіз</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        /* Mobile-first table styles */
+        @media (max-width: 768px) {
+            .responsive-table thead {
+                display: none;
+            }
+            .responsive-table tr {
+                display: block;
+                margin-bottom: 1.5rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .responsive-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0.25rem;
+                text-align: right;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .responsive-table td:last-child {
+                border-bottom: none;
+            }
+            .responsive-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                text-align: left;
+                padding-right: 1rem;
+                color: #374151;
+            }
+            .responsive-table .input-narrow, 
+            .responsive-table input[type="text"] {
+                width: 60%;
+                text-align: right;
+            }
+        }
+
+        .table-cell {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        .toast {
+            position: fixed; top: 20px; right: 20px;
+            background-color: #22c55e; color: white;
+            padding: 1rem; border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform: translateY(-20px);
+            z-index: 1000;
+        }
+        .toast.show { 
+            opacity: 1; 
+            transform: translateY(0);
+        }
+        .mismatch-row { background-color: #fef9c3; }
+        .input-narrow { max-width: 150px; }
+        #dream-description-editor, #amplification-words {
+            min-height: 128px; padding: 0.75rem; outline: none;
+        }
+        #dream-description-editor strong {
+            background-color: #fffde7; font-weight: 600;
+            padding: 1px 3px; border-radius: 3px; border: 1px solid #fef08a;
+        }
+        #amplification-words { font-family: monospace; font-size: 0.875rem; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen py-4 sm:py-8">
+
+    <div class="w-full max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
+
+        <!-- ===== Початковий екран ===== -->
+        <div id="setup-screen" class="screen active">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Асоціативний аналіз</h1>
+                <p class="text-gray-600 mt-2">Інструмент на основі методу Карла Юнга</p>
+            </header>
+             <div class="mt-6">
+                <label for="analysis-topic" class="block text-sm font-medium text-gray-700 mb-2">Тема аналізу:</label>
+                <input type="text" id="analysis-topic" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Сон про старий будинок, Ситуація на роботі...">
+            </div>
+             <div class="mt-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">1. Опишіть вашу тему:</label>
+                <div class="border border-gray-300 rounded-lg">
+                    <div class="p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                         <button id="bold-btn" class="font-bold text-lg px-3 py-1 rounded hover:bg-gray-200" title="Виділити слово (Ctrl+B)">B</button>
+                         <span class="text-xs text-gray-500 ml-2">Виділіть текст та натисніть 'B'.</span>
+                    </div>
+                    <div id="dream-description-editor" contenteditable="true" class="w-full p-3 outline-none"></div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <label for="word-input" class="block text-sm font-medium text-gray-700 mb-2">2. Слова-стимули:</label>
+                <textarea id="word-input" rows="6" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Виділяйте слова в описі або додавайте їх сюди вручну..."></textarea>
+            </div>
+            <div class="mt-8 text-center">
+                <button id="start-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700">Розпочати тест</button>
+            </div>
+        </div>
+        
+        <!-- ===== Екрани-посередники ===== -->
+        <div id="retest-instruction-screen" class="screen text-center p-4 sm:p-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Основний етап завершено</h1>
+            <p class="text-gray-600 mb-6 max-w-lg mx-auto">Зараз ви знову побачите ті самі слова (без калібрувальних). Ваше завдання — спробувати відтворити якомога точніше ту саму асоціацію, яку ви дали першого разу.</p>
+            <button id="start-retest-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700">Почати повторний тест</button>
+        </div>
+
+        <div id="test-screen" class="screen text-center p-4 sm:p-8">
+            <p id="test-phase-title" class="text-lg font-semibold text-indigo-600 mb-4"></p>
+            <p class="text-gray-500 mb-4">Слово-стимул:</p>
+            <h2 id="stimulus-word" class="text-4xl md:text-5xl font-bold mb-8 h-20 flex items-center justify-center break-words px-2"></h2>
+            <div class="relative max-w-md mx-auto">
+                <input type="text" id="association-input" class="w-full text-center p-4 border-2 border-gray-300 rounded-lg text-xl" placeholder="Ваша асоціація..." autocomplete="off">
+                <p class="absolute -bottom-6 right-0 text-sm text-gray-400">Натисніть Enter</p>
+            </div>
+             <div id="progress-indicator" class="mt-12 text-gray-500"></div>
+        </div>
+
+        <!-- ===== Екран результатів ===== -->
+        <div id="results-screen" class="screen">
+            <h1 id="final-title" class="text-2xl sm:text-3xl font-bold text-center mb-4">Результати аналізу</h1>
+            <div class="bg-gray-50 p-4 rounded-lg border mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Опис теми:</h3>
+                <div id="final-dream-description" class="text-gray-600 whitespace-pre-wrap"></div>
+            </div>
+
+            <div class="overflow-x-auto mb-8">
+                <table class="w-full text-left border-collapse text-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="table-cell font-semibold bg-gray-50">Стимул</th>
+                            <th class="table-cell font-semibold bg-gray-50">Асоціація 1</th>
+                            <th class="table-cell font-semibold bg-gray-50 text-center">Час</th>
+                            <th class="table-cell font-semibold bg-gray-50">Асоціація 2</th>
+                            <th class="table-cell font-semibold bg-gray-50 text-center">Час</th>
+                            <th class="table-cell font-semibold bg-gray-50 text-center">Розбіжність</th>
+                            <th class="table-cell font-semibold bg-gray-50 text-center">*</th>
+                            <th class="table-cell font-semibold bg-gray-50">Емоції</th>
+                            <th class="table-cell font-semibold bg-gray-50">Відчуття</th>
+                            <th class="table-cell font-semibold bg-gray-50">Коментар</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="mb-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-2 gap-2">
+                    <label class="block text-sm font-medium text-gray-700">Ключові слова для роботи:</label>
+                    <div class="flex items-center">
+                        <input id="include-details-checkbox" type="checkbox" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        <label for="include-details-checkbox" class="ml-2 block text-sm text-gray-900">Додавати деталі</label>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div id="amplification-words" contenteditable="true" class="w-full border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500"></div>
+                    <button id="copy-amplification-btn" class="absolute top-2 right-3 bg-gray-200 text-gray-700 font-semibold py-1 px-3 rounded-full text-xs hover:bg-gray-300">Копіювати</button>
+                </div>
+            </div>
+
+            <div id="interpretation-guide" class="bg-gray-50 p-6 rounded-lg border">
+                 <h3 class="text-xl font-bold mb-4">Як інтерпретувати результати?</h3>
+                 <p class="mb-4 text-gray-600">Цей тест — не іспит, а дзеркало. Він підсвічує емоційно заряджені теми (<strong class="text-gray-800">комплекси</strong>) у вашій психіці.</p>
+                 <h4 class="text-lg font-semibold mt-6 mb-3">Крок 1: Знайдіть індикатори комплексів</h4>
+                 <p class="mb-3 text-gray-600">Програма автоматично позначає (*) аномалії, спираючись на персоналізовану для вас логіку.</p>
+                  <ul class="space-y-3 list-disc list-inside">
+                     <li><strong class="text-gray-800">Розбіжність асоціацій:</strong> Найважливіший маркер. Вказує на сильний несвідомий заряд теми.</li>
+                     <li><strong class="text-gray-800">Довгий час реакції:</strong> Програма обчислює вашу середню швидкість. Значно довша реакція вказує на внутрішню боротьбу.</li>
+                     <li><strong class="text-gray-800">Сильні емоції та тілесні реакції:</strong> Прямі сигнали, що ви торкнулися чогось значущого.</li>
+                  </ul>
+                 <h4 class="text-lg font-semibold mt-6 mb-3">Крок 2: Працюйте з виявленими комплексами</h4>
+                  <ul class="space-y-3 list-disc list-inside text-gray-700">
+                     <li><strong>Ампліфікація:</strong> Розширте образ (міфи, казки, мистецтво).</li>
+                     <li><strong>Активна уява:</strong> Уявіть символ і почніть з ним діалог.</li>
+                     <li><strong>Зв'язок з реальним життям:</strong> Як тема пов'язана з вашими поточними обставинами?</li>
+                 </ul>
+                 <p class="mt-6 text-sm text-gray-500 border-t pt-4"><strong>Застереження:</strong> Цей інструмент призначений для самодослідження. Якщо теми викликають сильний дискомфорт, зверніться до психотерапевта.</p>
+            </div>
+            
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button id="copy-md-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 w-full sm:w-auto">Копіювати звіт (MD)</button>
+                <button id="export-csv-btn" class="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 w-full sm:w-auto">Експортувати в CSV</button>
+                <button id="restart-btn" class="bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-600 w-full sm:w-auto">Пройти ще раз</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-message" class="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const screens = { setup: document.getElementById('setup-screen'), retestInstruction: document.getElementById('retest-instruction-screen'), test: document.getElementById('test-screen'), results: document.getElementById('results-screen') };
+            const buttons = { start: document.getElementById('start-btn'), startRetest: document.getElementById('start-retest-btn'), exportCsv: document.getElementById('export-csv-btn'), copyMd: document.getElementById('copy-md-btn'), restart: document.getElementById('restart-btn'), bold: document.getElementById('bold-btn'), copyAmplification: document.getElementById('copy-amplification-btn') };
+            const inputs = { analysisTopic: document.getElementById('analysis-topic'), dreamDescriptionEditor: document.getElementById('dream-description-editor'), word: document.getElementById('word-input'), association: document.getElementById('association-input'), amplificationWords: document.getElementById('amplification-words'), includeDetailsCheckbox: document.getElementById('include-details-checkbox') };
+            const display = { finalTitle: document.getElementById('final-title'), finalDreamDescription: document.getElementById('final-dream-description'), testPhaseTitle: document.getElementById('test-phase-title'), stimulusWord: document.getElementById('stimulus-word'), progress: document.getElementById('progress-indicator'), resultsTableBody: document.getElementById('results-table-body'), toast: document.getElementById('toast-message') };
+
+            let wordList = [], currentWordIndex = 0, results = [], startTime, testPhase = 'run1', baseReactionTime = 0;
+            const NEUTRAL_WORDS = ['Стіл', 'Вода', 'Лампа', 'Книга', 'Дорога', 'Дерево', 'Скло', 'Крісло', 'Папір', 'Хмара'];
+            const CALIBRATION_COUNT = 3;
+
+            function showScreen(screenName) {
+                Object.values(screens).forEach(screen => screen.classList.remove('active'));
+                screens[screenName].classList.add('active');
+            }
+            
+            function showToast(message) {
+                display.toast.textContent = message;
+                display.toast.classList.add('show');
+                setTimeout(() => { display.toast.classList.remove('show'); }, 2000);
+            }
+
+            buttons.bold.addEventListener('click', () => {
+                const selection = window.getSelection();
+                if (!selection.rangeCount || selection.isCollapsed) return;
+                const selectedText = selection.toString().trim().replace(/\s+/g, ' ');
+                if (!selectedText) return;
+                
+                document.execCommand('bold', false, null);
+                const currentWords = inputs.word.value.split('\n').map(w => w.trim()).filter(Boolean);
+                if (!currentWords.includes(selectedText)) {
+                    inputs.word.value += (inputs.word.value ? '\n' : '') + selectedText;
+                }
+            });
+
+            function startTest() {
+                const rawWords = inputs.word.value.trim().split('\n');
+                const userWords = [...new Set(rawWords.filter(word => word.trim() !== ''))];
+                if (userWords.length === 0) { showToast('Будь ласка, додайте хоча б одне слово-стимул.'); return; }
+                
+                const calibrationWords = [...NEUTRAL_WORDS].sort(() => 0.5 - Math.random()).slice(0, CALIBRATION_COUNT);
+                wordList = [...calibrationWords, ...userWords];
+
+                currentWordIndex = 0;
+                results = wordList.map((stimulus, index) => ({ 
+                    stimulus, association1: '', reactionTime1: 0, 
+                    association2: '', reactionTime2: 0, 
+                    userFlagged: false, emotion: '', feeling: '', comment: '',
+                    isCalibration: index < CALIBRATION_COUNT
+                }));
+                testPhase = 'run1';
+                runTestPhase();
+            }
+            
+            function runTestPhase() {
+                currentWordIndex = 0;
+                const isRetest = testPhase === 'retest';
+                display.testPhaseTitle.textContent = isRetest ? 'Етап 2: Повторна асоціація' : 'Етап 1: Калібрування та перший прохід';
+                if(isRetest) {
+                    currentWordIndex = CALIBRATION_COUNT;
+                }
+                showScreen('test');
+                displayNextWord();
+            }
+
+            function displayNextWord() {
+                if (currentWordIndex < wordList.length) {
+                    display.stimulusWord.textContent = wordList[currentWordIndex];
+                    const progressText = results[currentWordIndex].isCalibration 
+                        ? `Калібрування ${currentWordIndex + 1} з ${CALIBRATION_COUNT}`
+                        : `Слово ${currentWordIndex - CALIBRATION_COUNT + 1} з ${wordList.length - CALIBRATION_COUNT}`;
+                    display.progress.textContent = progressText;
+                    inputs.association.value = '';
+                    inputs.association.focus();
+                    startTime = Date.now();
+                } else {
+                    testPhase === 'run1' ? showScreen('retestInstruction') : endTest();
+                }
+            }
+            
+            function handleAssociationSubmit(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const reactionTime = parseFloat(((Date.now() - startTime) / 1000).toFixed(2));
+                    const association = inputs.association.value.trim();
+                    if (association === '') { showToast('Будь ласка, введіть асоціацію.'); return; }
+                    
+                    const currentResult = results[currentWordIndex];
+                    if (testPhase === 'run1') {
+                        currentResult.association1 = association;
+                        currentResult.reactionTime1 = reactionTime;
+                    } else if (!currentResult.isCalibration) {
+                        currentResult.association2 = association;
+                        currentResult.reactionTime2 = reactionTime;
+                    }
+                    currentWordIndex++;
+                    displayNextWord();
+                }
+            }
+            
+            function endTest() {
+                showScreen('results');
+                const topic = inputs.analysisTopic.value.trim();
+                display.finalTitle.textContent = topic ? `Результати аналізу: ${topic}` : 'Результати аналізу';
+                display.finalDreamDescription.innerHTML = inputs.dreamDescriptionEditor.innerHTML;
+                displayResults();
+            }
+            
+            function updateAmplificationList() {
+                let content = '';
+                const includeDetails = inputs.includeDetailsCheckbox.checked;
+
+                results.forEach(result => {
+                    if (result.userFlagged && !result.isCalibration) {
+                        const stimulusText = `<strong>${result.stimulus}</strong>`;
+                        const assoc1 = result.association1.toLowerCase().trim();
+                        const assoc2 = result.association2.toLowerCase().trim();
+                        const associationText = assoc1 === assoc2 || !assoc2 
+                            ? `${result.association1}` : `${result.association1} / ${result.association2}`;
+
+                        let details = [];
+                        if (includeDetails) {
+                            if (result.emotion) details.push(`Емоція: ${result.emotion}`);
+                            if (result.feeling) details.push(`Відчуття: ${result.feeling}`);
+                            if (result.comment) details.push(`Коментар: ${result.comment}`);
+                        }
+                        
+                        let detailsString = details.length > 0 ? ` <em>[${details.join(' | ')}]</em>` : '';
+                        content += `<div>${stimulusText} → ${associationText}${detailsString}</div>`;
+                    }
+                });
+                inputs.amplificationWords.innerHTML = content;
+            }
+            
+            function displayResults() {
+                display.resultsTableBody.innerHTML = ''; 
+                const calibrationTimes = results.filter(r => r.isCalibration).map(r => r.reactionTime1);
+                baseReactionTime = calibrationTimes.reduce((a, b) => a + b, 0) / calibrationTimes.length || 2;
+                const longTimeThreshold = baseReactionTime * 1.75;
+                const tableHeaders = ['Стимул', 'Асоціація 1', 'Час', 'Асоціація 2', 'Час', 'Розбіжність', '*', 'Емоції', 'Відчуття', 'Коментар'];
+
+                results.forEach((result, index) => {
+                    if (result.isCalibration) return;
+
+                    const mismatch = result.association1.toLowerCase().trim() !== result.association2.toLowerCase().trim();
+                    const longTime = result.reactionTime1 > longTimeThreshold || result.reactionTime2 > longTimeThreshold;
+                    
+                    if(mismatch || longTime) {
+                        result.userFlagged = true;
+                    }
+
+                    const mismatchText = mismatch ? 'Так' : 'Ні';
+                    const row = document.createElement('tr');
+                    
+                    const cells = [
+                        `<td data-label="${tableHeaders[0]}" class="table-cell font-semibold">${result.stimulus}</td>`,
+                        `<td data-label="${tableHeaders[1]}" class="table-cell">${result.association1}</td>`,
+                        `<td data-label="${tableHeaders[2]}" class="table-cell text-center font-mono ${longTime && result.reactionTime1 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime1.toFixed(2)}</td>`,
+                        `<td data-label="${tableHeaders[3]}" class="table-cell">${result.association2}</td>`,
+                        `<td data-label="${tableHeaders[4]}" class="table-cell text-center font-mono ${longTime && result.reactionTime2 > longTimeThreshold ? 'text-red-500 font-bold' : ''}">${result.reactionTime2.toFixed(2)}</td>`,
+                        `<td data-label="${tableHeaders[5]}" class="table-cell text-center font-semibold ${mismatch ? 'text-red-600' : 'text-green-600'}">${mismatchText}</td>`,
+                        `<td data-label="${tableHeaders[6]}" class="table-cell text-center"><input type="checkbox" data-index="${index}" data-field="userFlagged" class="result-input h-5 w-5 text-indigo-600" ${result.userFlagged ? 'checked' : ''}></td>`,
+                        `<td data-label="${tableHeaders[7]}" class="table-cell"><input type="text" data-index="${index}" data-field="emotion" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.emotion}"></td>`,
+                        `<td data-label="${tableHeaders[8]}" class="table-cell"><input type="text" data-index="${index}" data-field="feeling" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.feeling}"></td>`,
+                        `<td data-label="${tableHeaders[9]}" class="table-cell"><input type="text" data-index="${index}" data-field="comment" class="result-input input-narrow w-full p-1 border rounded-md" value="${result.comment}"></td>`
+                    ];
+
+                    row.innerHTML = cells.join('');
+                    row.className = `hover:bg-gray-50 ${mismatch ? 'mismatch-row' : ''}`;
+                    display.resultsTableBody.appendChild(row);
+                });
+
+                document.querySelectorAll('.result-input').forEach(input => {
+                    const eventType = input.type === 'checkbox' ? 'change' : 'input';
+                    input.addEventListener(eventType, e => {
+                        const { index, field } = e.target.dataset;
+                        const value = input.type === 'checkbox' ? e.target.checked : e.target.value;
+                        results[index][field] = value;
+                        updateAmplificationList();
+                    });
+                });
+                updateAmplificationList();
+            }
+            
+            function generateReportContent(format) {
+                const topic = inputs.analysisTopic.value.trim();
+                const dreamDesc = inputs.dreamDescriptionEditor.textContent.trim();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = inputs.amplificationWords.innerHTML.replace(/<div>/g, '\n').replace(/<\/div>/g, '');
+                const ampWordsRaw = tempDiv.textContent.trim();
+                
+                let content = '';
+
+                if (format === 'md') {
+                    const ampWordsMd = inputs.amplificationWords.innerHTML
+                        .replace(/<strong>/g, '**').replace(/<\/strong>/g, '**')
+                        .replace(/<em>/g, '*').replace(/<\/em>/g, '*')
+                        .replace(/<\/div><div>/g, '\n').replace(/<div>/g, '').replace(/<\/div>/g, '');
+
+                    content += `# Аналіз: ${topic || 'Без назви'}\n\n## Опис\n${dreamDesc || 'Не заповнено.'}\n\n`;
+                    content += `## Ключові комплекси для ампліфікації\n\`\`\`\n${ampWordsMd || 'Немає'}\n\`\`\`\n\n`;
+                    content += `## Результати тесту\n\n`;
+                    const headers = ['Стимул', 'Асоціація 1', 'Час', 'Асоціація 2', 'Час', 'Розбіжність', '*', 'Емоції', 'Відчуття', 'Коментар'];
+                    content += `| ${headers.join(' | ')} |\n|---|---|:---:|---|:---:|:---:|:---:|---|---|---|\n`;
+                    results.filter(r => !r.isCalibration).forEach(r => {
+                        const mismatch = r.association1.toLowerCase().trim() !== r.association2.toLowerCase().trim() ? '**Так**' : 'Ні';
+                        const flagged = r.userFlagged ? '✓' : '';
+                        const row = [r.stimulus, r.association1, r.reactionTime1.toFixed(2), r.association2, r.reactionTime2.toFixed(2), mismatch, flagged, r.emotion, r.feeling, r.comment];
+                        content += `| ${row.map(s => String(s || '').replace(/\|/g, '\\|')).join(' | ')} |\n`;
+                    });
+                } else {
+                    const escapeCsvField = (field) => `"${String(field || '').replace(/"/g, '""')}"`;
+                    content += `Тема аналізу:\n${escapeCsvField(topic)}\n`;
+                    content += `Опис:\n${escapeCsvField(dreamDesc)}\n`;
+                    content += `Ключові комплекси для ампліфікації:\n${escapeCsvField(ampWordsRaw)}\n\n`;
+                    const headers = ['Стимул', 'Асоціація 1', 'Час 1', 'Асоціація 2', 'Час 2', 'Розбіжність', '*', 'Емоції', 'Відчуття', 'Коментар'];
+                    content += headers.map(h => escapeCsvField(h)).join(',') + '\n';
+                    results.filter(r => !r.isCalibration).forEach(r => {
+                        const mismatch = r.association1.toLowerCase().trim() !== r.association2.toLowerCase().trim() ? 'Так' : 'Ні';
+                        const flagged = r.userFlagged ? 'Так' : 'Ні';
+                        const row = [r.stimulus, r.association1, r.reactionTime1, r.reactionTime2, mismatch, flagged, r.emotion, r.feeling, r.comment];
+                        content += row.map(field => escapeCsvField(field)).join(',') + '\n';
+                    });
+                }
+                return content;
+            }
+            
+            function copyToClipboard(text, message) {
+                navigator.clipboard.writeText(text).then(() => showToast(message), () => showToast('Помилка копіювання'));
+            }
+
+            buttons.copyMd.addEventListener('click', () => copyToClipboard(generateReportContent('md'), 'Звіт скопійовано в буфер обміну!'));
+            buttons.copyAmplification.addEventListener('click', () => { 
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = inputs.amplificationWords.innerHTML.replace(/<div>/g, '\n').replace(/<\/div>/g, '');
+                const textToCopy = tempDiv.textContent.trim();
+                if (textToCopy) copyToClipboard(textToCopy, 'Ключові слова скопійовано!'); 
+            });
+            buttons.exportCsv.addEventListener('click', () => {
+                const content = generateReportContent('csv');
+                const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "associative_analysis.csv";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            inputs.includeDetailsCheckbox.addEventListener('change', updateAmplificationList);
+            buttons.start.addEventListener('click', startTest);
+            buttons.startRetest.addEventListener('click', () => { testPhase = 'retest'; runTestPhase(); });
+            buttons.restart.addEventListener('click', () => showScreen('setup'));
+            inputs.association.addEventListener('keydown', handleAssociationSubmit);
+        });
+    </script>
+</body>
+</html>
